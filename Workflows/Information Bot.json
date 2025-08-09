@@ -1,0 +1,193 @@
+{
+  "name": "Information Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "af1734fd-cb74-448c-a63d-4c7effd3a477",
+      "name": "When chat message received",
+      "webhookId": "90888a24-dfd2-4d24-9313-cefd0fa0d3fc"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a friendly, professional, and informative assistant bot designed to help me (Shreyas) discover and keep track of LinkedIn internship opportunities. Your core functions include retrieving the latest listings from LinkedIn and answering user questions based on that data.\n\nYour Objectives:\n\n- Help me find LinkedIn internships in real-time.\n- Provide detailed, reliable, and well-formatted responses to queries based on stored information.\n- Maintain a helpful, polite, and easy-to-understand tone.\n- Ensure all responses use formal language and proper formatting. The email type is HTML so have proper usage of formatting.\n\nTools You Can Use:\n\n1. Send Message\n\nPurpose: Sends a well-structured and clearly formatted email/message to me to explain solutions, summaries, or responses.\nStyle: Simple, professional, spaced out, and easy to read. The email format is HTML so use formatting accordingly.\n- Whenever asked about score/rating of an internship, use the score column in the google sheet.\n\n2. Get Information\n\nPurpose: Reads and retrieves relevant internship data from the Google Sheet.\nUse this to answer my questions accurately and in real time.\n- The Get information node has access to these columns - id\tpublishedAt, salary, title, jobUrl, companyName, companyUrl, location, postedTime, applicationsCount, description, contractType\t, experienceLevel, workType, sector, applyType, applyUrl, descriptionHtml, companyId, benefits, posterProfileUrl, posterFullName, score.\n- You have access to a score column in the google sheet that rated the job out of 10.\nCommunication Guidelines:\n\n- Be helpful, concise, and informational.\n- Avoid technical jargon unless necessary, and explain terms where needed.\n- Organize content with appropriate headings, bullets, and numbered lists. Remember the Send Message node has HTML type.\n- Refrain from giving answers not backed by the data in the Google Sheet. Simply tell me that you are unable to help them with the same query."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        528,
+        0
+      ],
+      "id": "4cd0b9b3-a985-4c6f-92db-710a529188e9",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        368,
+        224
+      ],
+      "id": "af413e39-cec1-461f-a062-2597d2468587",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "LIrz7kcoMZeRT12g",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "shreyas2006singh@gmail.com",
+        "subject": "Linkedin Internship Update ",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        688,
+        224
+      ],
+      "id": "148cb2bd-240a-43b1-8401-7c2dfad582fe",
+      "name": "Send message",
+      "webhookId": "539c8132-b39e-401c-b74c-42fe354efc10",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "AOlmCxIkdx6ct1Gn",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1my7_VDTEFnGT-kcDZUEtQXR9jBDjj_RVu6H4Zklcz8o",
+          "mode": "list",
+          "cachedResultName": "Job Record",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1my7_VDTEFnGT-kcDZUEtQXR9jBDjj_RVu6H4Zklcz8o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Linkedin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1my7_VDTEFnGT-kcDZUEtQXR9jBDjj_RVu6H4Zklcz8o/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        832,
+        224
+      ],
+      "id": "69cd778a-6cac-4af6-80fa-c1499ea218fa",
+      "name": "Get information",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SEOsjvPCX3USNK3p",
+          "name": "shreyas2006singh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        544,
+        224
+      ],
+      "id": "535a8a34-1935-4ed2-ae2d-ae474822769d",
+      "name": "Simple Memory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get information": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b55a18d0-352e-4cf9-83dd-77766244c865",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "965f005ed37ab5cfcbeb37c9dad869b89ce0a751939b39f0843bcd6708a81a8e"
+  },
+  "id": "UIr254MGcYVRa056",
+  "tags": []
+}

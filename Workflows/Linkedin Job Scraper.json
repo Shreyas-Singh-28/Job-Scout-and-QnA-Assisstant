@@ -1,0 +1,486 @@
+{
+  "name": "Linkedin Job Scraper",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "Get last run",
+        "userActorId": {
+          "__rl": true,
+          "value": "BHzefUZlZRKWxkTck",
+          "mode": "list",
+          "cachedResultName": "🔥 LinkedIn Jobs Scraper (bebity/linkedin-jobs-scraper)",
+          "cachedResultUrl": "https://console.apify.com/actors/BHzefUZlZRKWxkTck/input"
+        },
+        "authentication": "apifyOAuth2Api"
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        640,
+        240
+      ],
+      "id": "46d02600-e532-42d2-b268-d86e52c9ef24",
+      "name": "Get last run",
+      "credentials": {
+        "apifyOAuth2Api": {
+          "id": "JxjbI9p6y26rV34Q",
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Datasets",
+        "datasetId": "={{ $json.defaultDatasetId }}",
+        "offset": {},
+        "authentication": "apifyOAuth2Api"
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        848,
+        240
+      ],
+      "id": "22c3d9f9-5304-4705-9ec4-39f439283cd5",
+      "name": "Get dataset items",
+      "credentials": {
+        "apifyOAuth2Api": {
+          "id": "JxjbI9p6y26rV34Q",
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -16,
+        240
+      ],
+      "id": "88be4d25-4fe4-4b10-a4ff-4dd40e1b3f98",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const topCompanies = [\n  'google', 'microsoft', 'amazon', 'flipkart', 'adobe', \n  'oracle', 'ibm', 'tcs', 'infosys', 'wipro', 'accenture',\n  'dell', 'intel', 'meta', 'netflix', 'paytm', 'zomato', 'swiggy'\n];\n\nreturn items.map(item => {\n  let score = 0;\n  const location = (item.json.location || '').toLowerCase();\n  const isIndia = location.includes('india');\n\n  if (isIndia) {\n    score += calculateSalaryPoints(item.json.salary); \n    score += calculateWorkTypePoints(item.json.workType);\n    score += calculateCompanyPoints(item.json.companyName);\n    score += (item.json.benefits && item.json.benefits.length > 0) ? 1 : 0;\n    score += calculateExperiencePoints(item.json.experienceLevel);\n    score += calculateContractPoints(item.json.contractType);\n  }\n\n  return {\n    json: {\n      ...item.json,\n      score: Math.min(10, Math.round(score * 10) / 10)\n    }\n  };\n});\n\nfunction calculateSalaryPoints(salary) {\n  if (!salary) return 0;\n  \n  const salaryText = salary.toLowerCase();\n  let monthlySalary = 0;\n  \n  const numbers = salaryText.match(/[\\d,]+\\.?\\d*/g);\n  if (!numbers || numbers.length === 0) return 0;\n  \n  const numericValue = parseFloat(numbers[0].replace(/,/g, ''));\n  \n  if (salaryText.includes('per hour')) {\n    monthlySalary = numericValue * 8 * 22;\n  } else if (salaryText.includes('per year') || salaryText.includes('annual') || salaryText.includes('lpa') || salaryText.includes('lakh')) {\n    monthlySalary = numericValue * 100000 / 12;\n  } else if (salaryText.includes('per day')) {\n    monthlySalary = numericValue * 22;\n  } else {\n    monthlySalary = numericValue;\n  }\n  \n  if (monthlySalary >= 50000) return 3;\n  if (monthlySalary >= 30000) return 2;\n  if (monthlySalary > 0) return 1;\n  return 0;\n}\n\nfunction calculateWorkTypePoints(workType) {\n  if (!workType) return 1;\n  \n  const type = workType.toLowerCase();\n  if (type.includes('remote')) return 2;\n  if (type.includes('hybrid')) return 1.5;\n  return 1;\n}\n\nfunction calculateCompanyPoints(companyName) {\n  if (!companyName) return 1;\n  \n  const name = companyName.toLowerCase();\n  if (topCompanies.some(company => name.includes(company))) return 2;\n  return 1;\n}\n\nfunction calculateExperiencePoints(experienceLevel) {\n  if (!experienceLevel) return 0;\n  \n  const level = experienceLevel.toLowerCase();\n  if (level.includes('intern') || \n      level.includes('entry') || \n      level.includes('fresher') ||\n      level.includes('student')) {\n    return 1;\n  }\n  return 0;\n}\n\nfunction calculateContractPoints(contractType) {\n  if (!contractType) return 0;\n  \n  const type = contractType.toLowerCase();\n  if (type.includes('full')) return 1;\n  if (type.includes('part') || type.includes('contract')) return 0.5;\n  return 0;\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1264,
+        240
+      ],
+      "id": "aa78c22c-3399-4005-a18f-348cac6fd5f7",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1056,
+        240
+      ],
+      "id": "00d0beae-efa2-4e9b-a2ed-cee395cbdb40",
+      "name": "Wait 10s",
+      "webhookId": "088827f7-bdb6-47c6-bf89-26c27b103f70"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/bebity~linkedin-jobs-scraper/runs?token=key",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "key"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n    \"experienceLevel\": \"1\",\n    \"location\": \"India\",\n    \"proxy\": {\n        \"useApifyProxy\": true,\n        \"apifyProxyGroups\": [\n            \"RESIDENTIAL\"\n        ]\n    },\n    \"publishedAt\": \"r604800\",\n    \"title\": \"Machine Learning\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        208,
+        240
+      ],
+      "id": "dd8ebe67-9bdf-4a1d-8504-29949c752325",
+      "name": "Run Apify Actor"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1my7_VDTEFnGT-kcDZUEtQXR9jBDjj_RVu6H4Zklcz8o",
+          "mode": "list",
+          "cachedResultName": "Job Record",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1my7_VDTEFnGT-kcDZUEtQXR9jBDjj_RVu6H4Zklcz8o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Linkedin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1my7_VDTEFnGT-kcDZUEtQXR9jBDjj_RVu6H4Zklcz8o/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "score": "={{ $json.score }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "publishedAt",
+              "displayName": "publishedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "salary",
+              "displayName": "salary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "jobUrl",
+              "displayName": "jobUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "companyName",
+              "displayName": "companyName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "companyUrl",
+              "displayName": "companyUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "postedTime",
+              "displayName": "postedTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "applicationsCount",
+              "displayName": "applicationsCount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "contractType",
+              "displayName": "contractType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "experienceLevel",
+              "displayName": "experienceLevel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workType",
+              "displayName": "workType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sector",
+              "displayName": "sector",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "applyType",
+              "displayName": "applyType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "applyUrl",
+              "displayName": "applyUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "descriptionHtml",
+              "displayName": "descriptionHtml",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "companyId",
+              "displayName": "companyId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "benefits",
+              "displayName": "benefits",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "posterProfileUrl",
+              "displayName": "posterProfileUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "posterFullName",
+              "displayName": "posterFullName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1472,
+        240
+      ],
+      "id": "d46d7bfc-d9d7-41d9-9687-11d53defbe5e",
+      "name": "Update Data",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SEOsjvPCX3USNK3p",
+          "name": "shreyas2006singh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 200
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        432,
+        240
+      ],
+      "id": "86b54e11-b266-40f3-9ce9-6ca3dd087efe",
+      "name": "Wait till Completion",
+      "webhookId": "8c664623-1e5e-4335-9db5-4de7003f1aa1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get last run": {
+      "main": [
+        [
+          {
+            "node": "Get dataset items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get dataset items": {
+      "main": [
+        [
+          {
+            "node": "Wait 10s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Run Apify Actor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Update Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 10s": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Apify Actor": {
+      "main": [
+        [
+          {
+            "node": "Wait till Completion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait till Completion": {
+      "main": [
+        [
+          {
+            "node": "Get last run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f943a2fe-3131-4d34-a773-22af76603c51",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "965f005ed37ab5cfcbeb37c9dad869b89ce0a751939b39f0843bcd6708a81a8e"
+  },
+  "id": "fpdd8kVaPRzE5WNs",
+  "tags": []
+}
